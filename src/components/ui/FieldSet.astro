@@ -1,0 +1,14 @@
+---
+type Props = {
+    legend: string;
+    [key: string]: any;
+};
+
+const { legend, ...attrs } = Astro.props;
+---
+
+<fieldset class="fieldset bg-base-200 border-base-300 rounded-box border p-4 w-full" {...attrs}>
+    <legend class="fieldset-legend">{legend}</legend>
+    
+    <slot />
+</fieldset>

@@ -1,0 +1,155 @@
+---
+import Button from "../ui/Button.astro";
+import FieldSet from "../ui/FieldSet.astro";
+import Label from "../ui/Label.astro";
+import ImageQuality from "./ImageQuality.astro";
+import { formats } from "@/lib/formats";
+import Select from "../ui/Select.astro";
+import NumberInput from "../ui/NumberInput.astro";
+
+type Props = {
+    disabled?: boolean,
+    [key: string]: any;
+};
+
+const { disabled = false, ...attrs } = Astro.props;
+---
+
+<options-form {...attrs}>
+    <FieldSet legend="Options" disabled={disabled}}>
+        <Label>
+            <ImageQuality id="imageQuality" class="pb-2" disabled />
+        </Label>
+
+        <Label>
+            Width
+            <NumberInput 
+                placeholder="Type a number between 1 to 8192"
+                title="Must be between 1 and 8192"
+                min={1} max={8192} id="targetWidth"
+            />
+            Height
+            <NumberInput 
+                placeholder="Type a number between 1 to 8192"
+                title="Must be between 1 and 8192"
+                min={1} max={8192} id="targetHeight"
+            />
+        </Label>
+
+        <Label for="imageFormat" class="pb-1">Output Format</Label>
+        <Select
+            id="imageFormat"
+            title="Image format"
+            variant="primary"
+            options={Object.entries(formats).map(([value, { label }]) => ({
+                value,
+                label,
+            }))}
+            class="select-primary w-full"
+        />
+        
+        <Button id="convertBtn" variant="primary" class="btn-primary mt-4" disabled>Convert Image</button>    
+    </FieldSet>
+</options-form>
+
+<script>
+    import type { HTMLImageOptions } from "@/lib/comps";
+    import { formats, type FormatOption } from "@/lib/formats";
+
+    class OptionsForm extends HTMLElement implements HTMLImageOptions {
+        fieldSet: HTMLFieldSetElement | null = null;
+        imageFormat: HTMLSelectElement | null = null;
+        imageQuality: HTMLInputElement | null = null;
+
+        targetWidth: HTMLInputElement | null = null;
+        targetHeight: HTMLInputElement | null = null;
+
+        connectedCallback() {
+            this.fieldSet = this.querySelector("fieldSet");
+            
+            const imageQuality = this.querySelector("#imageQuality") as HTMLInputElement;
+            const imageFormat = this.querySelector("#imageFormat") as HTMLSelectElement;
+
+            const targetWidth = this.querySelector("#targetWidth") as HTMLInputElement;
+            const targetHeight = this.querySelector("#targetHeight") as HTMLInputElement;
+
+            const convertBtn = this.querySelector("button") as HTMLButtonElement;
+
+            imageQuality.addEventListener("input", e => { 
+                const quality = this.quality;
+                this.dispatchEvent(new CustomEvent("options:quality", { detail: { quality } }))
+            });
+            
+            imageFormat.addEventListener("change", e => {
+                const formatOption = formats[imageFormat.value];
+                
+                convertBtn.disabled = formatOption === null;
+                
+                if (!formatOption) return;
+
+                const showQuality = formatOption?.supportsQuality ?? false;
+                imageQuality.disabled = !showQuality;
+                
+                this.dispatchEvent(new CustomEvent("options:mime", { detail: { format: formatOption } }));
+            });
+
+            convertBtn.addEventListener("click", e => {
+                this.dispatchEvent(new CustomEvent("options:convert", { detail: { event: e } }));
+            });
+            
+            const dimChange = () => {
+                const [width, height] = [this.width, this.height];
+                this.dispatchEvent(new CustomEvent("options:size", { detail: { width, height } }));
+            };
+
+            targetWidth.addEventListener("change", dimChange);
+            targetHeight.addEventListener("change", dimChange);
+
+            this.imageFormat = imageFormat;
+            this.imageQuality = imageQuality;
+
+            this.targetWidth = targetWidth;
+            this.targetHeight = targetHeight;
+        }
+        
+        get format(): FormatOption | undefined {
+            return formats[this.imageFormat!.value];
+        }
+
+        get quality(): number | undefined {
+            return parseInt(this.imageQuality!.value);
+        }
+        
+        get disabled(): boolean {
+            return this.fieldSet!.disabled;
+        }
+
+        set disabled(value: boolean) {
+            this.fieldSet!.disabled = value;
+        }
+
+        get width(): number {
+            return parseInt(this.targetWidth!.value);
+        }
+        
+        set width(value: number) {
+            this.targetWidth!.value = String(value);
+        }
+
+        get height(): number {
+            return parseInt(this.targetHeight!.value);
+        }
+
+        set height(value: number) {
+            this.targetHeight!.value = String(value);
+        }
+
+        get valid(): boolean {
+            return this.targetWidth!.checkValidity() && this.targetHeight!.checkValidity();
+        }
+    }
+
+    try {
+        customElements.define('options-form', OptionsForm);
+    } catch (e) { }
+</script>

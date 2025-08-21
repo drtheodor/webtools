@@ -1,0 +1,19 @@
+---
+type Props = {
+  id1: string;
+  id2: string;
+  class?: string;
+};
+
+const { id1, id2, class: className = '' } = Astro.props;
+---
+
+<figure class:list={["diff", "aspect-16/9", className]} tabindex="0">
+  <div class="diff-item-1" role="img" tabindex="0">
+    <img id={id1} />
+  </div>
+  <div class="diff-item-2" role="img">
+    <img id={id2} />
+  </div>
+  <div class="diff-resizer"></div>
+</figure>

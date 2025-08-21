@@ -1,0 +1,34 @@
+---
+import Slider from "@/components/ui/Slider.astro";
+
+type Props = {
+    class?: string;
+    defaultValue?: number;
+    [key: string]: any;
+};
+
+const { class: className = '', defaultValue = 92, ...attrs } = Astro.props;
+---
+
+<quality-slider class:list={["w-full flex items-center", className]}>
+    Quality <span class="text-primary pl-1 pr-2">{defaultValue}%</span> 
+
+    <Slider variant="primary" min={1} max={100} value={defaultValue} class="range-primary w-full" {...attrs} />
+</quality-slider>
+
+<script>
+    class ImageQualitySlider extends HTMLElement {
+        connectedCallback() {
+            const qualitySpan = this.querySelector('span')!;
+            const input = this.querySelector('input')!;
+
+            input.addEventListener('input', () => {
+                qualitySpan.textContent = `${input.value}%`;
+            });
+        }
+    }
+
+    try {
+        customElements.define('quality-slider', ImageQualitySlider);
+    } catch (e) { }
+</script>

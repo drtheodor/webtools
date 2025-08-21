@@ -5,8 +5,8 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-	base: '/webtools',
-	vite: {
-		plugins: [tailwindcss()],
+  base: '/webtools',
+  vite: {
+      plugins: [tailwindcss()],
 	},
 });

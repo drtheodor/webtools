@@ -1,0 +1,26 @@
+---
+type Props = {
+    min?: number;
+    max?: number;
+    title?: string;
+    placeholder?: string;
+    hint?: string;
+    [key: string]: any;
+};
+
+const { min, max, title = '', placeholder = '', hint, ...attrs } = Astro.props;
+---
+
+<input
+    type="number"
+    class="input validator w-full"
+    required
+    placeholder={placeholder}
+    min="1"
+    max="8192"
+    title={title}
+    {...attrs}
+/>
+{ hint ?? (
+    <p class="validator-hint">{hint}</p>
+) }

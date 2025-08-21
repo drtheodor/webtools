@@ -1,25 +1,235 @@
 ---
-import '../styles/global.css';
-// Component Imports
-import Button from '../components/Button.astro';
-
-// Full Astro Component Syntax:
-// https://docs.astro.build/basics/astro-components/
+import ImageComparisonSlider from '@/components/ui/ImageComparisonSlider.astro';
+import BaseHead from '../components/BaseHead.astro';
+import Button from '../components/ui/Button.astro';
+import Card from '../components/ui/Card.astro';
+import Select from '../components/ui/Select.astro';
+import Slider from '../components/ui/Slider.astro';
+import { formats, defaultFormat } from '@/lib/formats';
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro + TailwindCSS</title>
-	</head>
+<BaseHead title="Advanced Image Converter" />
 
-	<body>
-		<div class="grid place-items-center h-screen content-center">
-			<Button>Tailwind Button in Astro!</Button>
-			<a href="/markdown-page" class="p-4 underline">Markdown is also supported...</a>
-		</div>
-	</body>
-</html>
+<div class="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-3xl mx-auto">
+    <Card>
+      <h1 class="text-2xl font-bold text-center mb-6 text-white">Advanced Image Converter</h1>
+      
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">
+            Upload Image
+          </label>
+          <div 
+            id="dropZone"
+            class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md border-gray-700 hover:border-blue-500 transition-colors bg-gray-800"
+          >
+            <div class="space-y-1 text-center">
+              <div class="flex justify-center text-gray-400">
+                <svg class="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+              <div class="flex text-sm text-gray-400">
+                <label class="relative cursor-pointer bg-gray-800 rounded-md font-medium text-blue-400 hover:text-blue-300">
+                  <span>Upload a file</span>
+                  <input 
+                    type="file" 
+                    id="imageInput"
+                    accept="image/*"
+                    class="sr-only"
+                  />
+                </label>
+                <p class="pl-1">or drag and drop</p>
+              </div>
+              <p class="text-xs text-gray-500">PNG, JPG, WEBP up to 10MB</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">
+            Output Format
+          </label>
+          <Select 
+            id="formatSelect" 
+            options={Object.entries(formats).map(([value, { label }]) => ({ value, label }))} 
+            defaultValue={defaultFormat} 
+            class="w-full"
+          />
+        </div>
+
+        <div id="qualityControl" class="hidden">
+          <label class="block text-sm font-medium text-gray-300 mb-1">
+            Quality <span id="qualityValue" class="text-gray-400">92%</span>
+          </label>
+          <Slider id="qualitySlider" min="1" max="100" value="92" />
+        </div>
+
+        <div class="flex justify-center">
+          <Button id="convertBtn" disabled>
+            Convert Image
+          </Button>
+        </div>
+      </div>
+
+      <div id="previewContainer" class="mt-8 hidden">
+        <h2 class="text-lg font-medium text-white mb-4 text-center">Preview</h2>
+        <ImageComparisonSlider 
+          id="comparisonSlider" 
+          originalSrc="" 
+          convertedSrc="" 
+        />
+        
+        <div class="mt-4 flex justify-center">
+          <a 
+            id="downloadLink" 
+            href="#" 
+            download="converted-image.png"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-green-500"
+          >
+            Download Converted Image
+          </a>
+        </div>
+      </div>
+    </Card>
+  </div>
+</div>
+
+<script is:inline>
+  document.documentElement.classList.add('dark');
+</script>
+
+<script>
+  import { formats, defaultFormat } from '@/lib/formats';
+
+  interface ImageConverter {
+    currentImage: HTMLImageElement | null;
+    originalFile: File | null;
+    isDragging: boolean;
+  }
+
+  const state: ImageConverter = {
+    currentImage: null,
+    originalFile: null,
+    isDragging: false
+  };
+
+  // DOM Elements
+  const dropZone = document.getElementById('dropZone')!;
+  const imageInput = document.getElementById('imageInput') as HTMLInputElement;
+  const formatSelect = document.getElementById('formatSelect') as HTMLSelectElement;
+  const qualityControl = document.getElementById('qualityControl')!;
+  const qualitySlider = document.getElementById('qualitySlider') as HTMLInputElement;
+  const qualityValue = document.getElementById('qualityValue')!;
+  const convertBtn = document.getElementById('convertBtn') as HTMLButtonElement;
+  const previewContainer = document.getElementById('previewContainer')!;
+  const originalImage = document.getElementById('originalImage') as HTMLImageElement;
+  const resultImage = document.getElementById('resultImage') as HTMLImageElement;
+  const downloadLink = document.getElementById('downloadLink') as HTMLAnchorElement;
+  let currentFormat = defaultFormat;
+
+  // Event Listeners
+  imageInput.addEventListener('change', handleFileSelect);
+  dropZone.addEventListener('dragover', handleDragOver);
+  dropZone.addEventListener('dragleave', handleDragLeave);
+  dropZone.addEventListener('drop', handleDrop);
+  formatSelect.addEventListener('change', handleFormatChange);
+  qualitySlider.addEventListener('input', updateQualityValue);
+  convertBtn.addEventListener('click', convertImage);
+
+  // Initialize slider
+  updateQualityValue();
+
+  function handleFileSelect(e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      processFile(input.files[0]);
+    }
+  }
+
+  function handleDragOver(e: DragEvent) {
+    e.preventDefault();
+    if (!state.isDragging) {
+      state.isDragging = true;
+      dropZone.classList.add('border-blue-500', 'bg-gray-800');
+    }
+  }
+
+  function handleDragLeave() {
+    state.isDragging = false;
+    dropZone.classList.remove('border-blue-500', 'bg-gray-800');
+  }
+
+  function handleDrop(e: DragEvent) {
+    e.preventDefault();
+    state.isDragging = false;
+    dropZone.classList.remove('border-blue-500', 'bg-gray-800');
+    
+    if (e.dataTransfer?.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  }
+
+  function processFile(file: File) {
+    if (!file.type.match('image.*')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    state.originalFile = file;
+    const reader = new FileReader();
+    
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      const img = new Image();
+      img.onload = () => {
+        state.currentImage = img;
+        originalImage.src = img.src;
+        convertBtn.disabled = false;
+      };
+      img.src = e.target?.result as string;
+    };
+    
+    reader.readAsDataURL(file);
+  }
+
+  function handleFormatChange(event: Event) {
+    const format = (event as any).detail.value; // trust me bro
+    const formatOption = formats[format];
+    const showQuality = formatOption?.supportsQuality ?? false;
+    qualityControl.classList.toggle('hidden', !showQuality);
+    
+    currentFormat = format;
+  }
+
+  function updateQualityValue() {
+    qualityValue.textContent = `${qualitySlider.value}%`;
+  }
+
+  function convertImage() {
+    if (!state.currentImage) return;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = state.currentImage.width;
+    canvas.height = state.currentImage.height;
+    ctx.drawImage(state.currentImage, 0, 0);
+
+    const quality = parseInt(qualitySlider.value) / 100;
+    const dataURL = canvas.toDataURL(currentFormat, quality);
+
+    resultImage.src = dataURL;
+    downloadLink.href = dataURL;
+    downloadLink.download = `converted-image.${currentFormat.split('/')[1]}`;
+    previewContainer.classList.remove('hidden');
+
+    // Update the comparison slider component
+    const comparisonSlider = document.getElementById('comparisonSlider') as any;
+    if (comparisonSlider) {
+      comparisonSlider.setAttribute('originalSrc', state.currentImage.src);
+      comparisonSlider.setAttribute('convertedSrc', dataURL);
+    }
+  }
+</script>

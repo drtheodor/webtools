@@ -1,0 +1,45 @@
+---
+export type SelectItem = {
+  value: string;
+  label: string;
+};
+
+type Props = {
+  options: SelectItem[];
+  defaultValue: string;
+  id: string;
+  class?: string;
+}
+
+const { options, defaultValue, id, class: className = '', ...rest } = Astro.props;
+---
+
+<script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.2/dist/js/basecoat.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.2/dist/js/select.min.js" defer></script>
+
+<div class:list={["select", "dark", className]} {...rest} id={id}>
+  <button type="button" class="btn-outline justify-between font-normal w-full" aria-haspopup="listbox" aria-expanded="false">
+    <span class="truncate"></span>
+
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-up-down-icon lucide-chevrons-up-down text-muted-foreground opacity-50 shrink-0">
+      <path d="m7 15 5 5 5-5" />
+      <path d="m7 9 5-5 5 5" />
+    </svg>
+  </button>
+  <div data-popover aria-hidden="true">
+    <header>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-icon lucide-search">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </svg>
+      <input type="text" value="" placeholder="Search..." autocomplete="off" autocorrect="off" spellcheck="false" aria-autocomplete="list" role="combobox" aria-expanded="false" />
+    </header>
+
+    <div role="listbox" aria-orientation="vertical" data-empty="Empty.">
+      {options.map(option => (
+        <div role="option" data-value={option.value}>{option.label}</div>
+      ))}
+    </div>
+  </div>
+  <input id={id} type="hidden" value="" />
+</div>

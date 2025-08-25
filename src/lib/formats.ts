@@ -7,8 +7,8 @@ export interface FormatOption {
 
 export const formats: Record<string, FormatOption> = makeRecord(
   { mime: 'image/png', label: 'PNG', extension: 'png', supportsQuality: false },
-  { mime: 'image/jpeg', label: 'JPEG', extension: '.jpg', supportsQuality: true },
-  { mime: 'image/webp', label: 'WebP', extension: '.webp', supportsQuality: true }
+  { mime: 'image/jpeg', label: 'JPEG', extension: 'jpg', supportsQuality: true },
+  { mime: 'image/webp', label: 'WebP', extension: 'webp', supportsQuality: true }
 );
 
 function makeRecord(...options: FormatOption[]): Record<string, FormatOption> {
